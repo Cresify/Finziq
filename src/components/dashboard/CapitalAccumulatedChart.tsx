@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getAll, convertToBase, formatMoney, type Transaction, type CurrencyRate } from "@/db/database";
+import { getAll, convertToBase, formatMoney, type Transaction, type CurrencyRate, type SavingsAccount } from "@/db/database";
 import { useApp } from "@/contexts/AppContext";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
@@ -33,14 +33,20 @@ export function CapitalAccumulatedChart({ month, baseCurrency, rates }: Props) {
   const { refreshFlag } = useApp();
   const [mode, setMode] = useState<Mode>("year");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<SavingsAccount[]>([]);
+  const [accountId, setAccountId] = useState<string>("all");
 
   useEffect(() => {
-    getAll<Transaction>("transactions").then(setTransactions);
+  getAll<Transaction>("transactions").then(setTransactions);
+  getAll<SavingsAccount>("savings_accounts").then(a => setAccounts(a.sort((x, y) => x.order - y.order)));
   }, [refreshFlag]);
 
   const data = useMemo(() => {
     // Solo movimientos "Ahorro e inversión" (antes savings_executed)
-    const inv = transactions.filter(t => t.type === "savings_executed");
+    const invAll = transactions.filter(t => t.type === "savings_executed");
+    const inv = accountId === "all"
+      ? invAll
+      : invAll.filter(t => (t.savings_account_id || "") === accountId);
 
     // total por mes (en moneda base)
     const perMonth = new Map<string, number>();
@@ -68,7 +74,7 @@ export function CapitalAccumulatedChart({ month, baseCurrency, rates }: Props) {
         Capital: Math.round(acc),
       };
     });
-  }, [transactions, rates, mode, month]);
+  }, [transactions, rates, mode, month, accountId]);
 
   if (data.length === 0) {
     return <p className="text-center text-muted-foreground text-sm py-6">Sin movimientos de ahorro/inversión</p>;
@@ -76,20 +82,34 @@ export function CapitalAccumulatedChart({ month, baseCurrency, rates }: Props) {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex gap-1.5 mb-3">
-        <button
-          onClick={() => setMode("year")}
-          className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${mode === "year" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-        >
-          Año actual
-        </button>
-        <button
-          onClick={() => setMode("all")}
-          className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${mode === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
-        >
-          Histórico
-        </button>
-      </div>
+      <div className="flex items-center justify-between gap-2 mb-3">
+  <div className="flex gap-1.5">
+    <button
+      onClick={() => setMode("year")}
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${mode === "year" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+    >
+      Año actual
+    </button>
+    <button
+      onClick={() => setMode("all")}
+      className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${mode === "all" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}
+    >
+      Histórico
+    </button>
+  </div>
+
+  <select
+    value={accountId}
+    onChange={(e) => setAccountId(e.target.value)}
+    className="h-8 rounded-lg border border-input bg-background px-2 text-[12px] max-w-[160px]"
+    title="Filtrar por cuenta"
+  >
+    <option value="all">Total</option>
+    {accounts.filter(a => a.is_active).map(a => (
+      <option key={a.id} value={a.id}>{a.name}</option>
+    ))}
+  </select>
+</div>
 
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>

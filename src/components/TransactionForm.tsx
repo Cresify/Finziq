@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAll, getById, putItem, genId, getLocalDateStr, type Transaction, type Category, type Subcategory, type IncomeSource, type CurrencyRate } from '@/db/database';
+import { getAll, getById, putItem, genId, getLocalDateStr, type Transaction, type Category, type Subcategory, type IncomeSource, type CurrencyRate, type SavingsAccount } from '@/db/database';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,12 +56,17 @@ export default function TransactionForm({ editId }: Props) {
   const [subcategoryId, setSubcategoryId] = useState('');
   const [incomeSourceId, setIncomeSourceId] = useState('');
   const [note, setNote] = useState('');
+  const [savingsAccounts, setSavingsAccounts] = useState<SavingsAccount[]>([]);
+  const [savingsAccountId, setSavingsAccountId] = useState('');
 
   useEffect(() => {
     getAll<Category>('categories').then(c => setCategories(c.filter(x => x.is_active).sort((a, b) => a.order - b.order)));
     getAll<Subcategory>('subcategories').then(s => setSubcategories(s.filter(x => x.is_active).sort((a, b) => a.order - b.order)));
     getAll<IncomeSource>('income_sources').then(s => setIncomeSources(s.filter(x => x.is_active).sort((a, b) => a.order - b.order)));
     getAll<CurrencyRate>('currency_rates').then(setCurrencyRates);
+    getAll<SavingsAccount>('savings_accounts').then(a =>
+  setSavingsAccounts(a.filter(x => x.is_active).sort((a,b)=>a.order-b.order))
+);
   }, []);
 
   useEffect(() => { if (settings) setCurrency(prev => prev || settings.base_currency); }, [settings]);
@@ -72,6 +77,7 @@ export default function TransactionForm({ editId }: Props) {
         if (!tx) return;
         setType(tx.type);
 setCurrency(tx.currency);
+setSavingsAccountId((tx as any).savings_account_id || "");
 
 const rawAmount = Number(tx.amount) || 0;
 
@@ -114,6 +120,7 @@ if (tx.type === "savings_executed") {
     category_id: type === "expense" ? categoryId || undefined : undefined,
     subcategory_id: type === "expense" ? subcategoryId || undefined : undefined,
     income_source_id: type === "income" ? incomeSourceId || undefined : undefined,
+    savings_account_id: type === "savings_executed" ? (savingsAccountId || undefined) : undefined,
   };
 
   await putItem("transactions", tx);
@@ -190,6 +197,23 @@ if (tx.type === "savings_executed") {
           <Label className="text-xs text-muted-foreground">Fecha</Label>
           <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1" />
         </div>
+
+        {type === "savings_executed" && (
+  <div>
+    <Label className="text-xs text-muted-foreground">Cuenta (ahorro / inversión)</Label>
+    <select
+      value={savingsAccountId}
+      onChange={(e) => setSavingsAccountId(e.target.value)}
+      className="w-full h-10 mt-1 rounded-lg border border-input bg-background px-3 text-sm"
+      required
+    >
+      <option value="">Seleccionar...</option>
+      {savingsAccounts.map(a => (
+        <option key={a.id} value={a.id}>{a.name}</option>
+      ))}
+    </select>
+  </div>
+)}
         {type === 'expense' && (
           <>
             <div>

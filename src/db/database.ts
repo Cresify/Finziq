@@ -11,6 +11,7 @@ export interface Transaction {
   income_source_id?: string;
   category_id?: string;
   subcategory_id?: string;
+  savings_account_id?: string;
 }
 
 export interface Category {
@@ -64,13 +65,23 @@ export interface AppSettings {
   dashboard_layout: DashboardWidget[];
 }
 
+export type SavingsAccount = {
+  id: string;
+  name: string;
+  order: number;
+  is_active: boolean;
+};
+
+
 // ─── Database ────────────────────────────────────
 let dbInstance: IDBPDatabase | null = null;
 
 export async function getDB() {
   if (dbInstance) return dbInstance;
-  dbInstance = await openDB('GastosApp', 1, {
-    upgrade(db) {
+  dbInstance = await openDB('GastosApp', 2, {
+  upgrade(db, oldVersion) {
+    // v1
+    if (oldVersion < 1) {
       db.createObjectStore('transactions', { keyPath: 'id' });
       db.createObjectStore('categories', { keyPath: 'id' });
       db.createObjectStore('subcategories', { keyPath: 'id' });
@@ -78,8 +89,16 @@ export async function getDB() {
       db.createObjectStore('budgets', { keyPath: 'id' });
       db.createObjectStore('currency_rates', { keyPath: 'id' });
       db.createObjectStore('settings', { keyPath: 'id' });
-    },
-  });
+    }
+
+    // v2
+    if (oldVersion < 2) {
+      if (!db.objectStoreNames.contains('savings_accounts')) {
+        db.createObjectStore('savings_accounts', { keyPath: 'id' });
+      }
+    }
+  },
+});
   return dbInstance;
 }
 
@@ -127,6 +146,7 @@ export function shiftMonthLocal(month: string, delta: number) {
   return getLocalMonthStr(d);
 }
 
+
 // ─── Accent presets ──────────────────────────────
 export const ACCENT_PRESETS: Record<string, { h: number; s: number; l: number; name: string }> = {
   emerald: { h: 158, s: 64, l: 42, name: 'Esmeralda' },
@@ -162,6 +182,22 @@ export async function deleteItem(store: string, id: string): Promise<void> {
 export async function seedDatabase() {
   const db = await getDB();
   const existing = await db.get('settings', 'singleton');
+  // ✅ Asegura cuentas de ahorro/inversión (aunque settings ya exista)
+try {
+  const existingAccounts = await db.getAll('savings_accounts');
+  if (!existingAccounts || existingAccounts.length === 0) {
+    const accTx = db.transaction(['savings_accounts'], 'readwrite');
+    const store = accTx.objectStore('savings_accounts');
+
+    await store.add({ id: 'sav-corriente', name: 'Cuenta corriente', is_active: true, order: 0 });
+    await store.add({ id: 'sav-ahorro', name: 'Cuenta ahorro', is_active: true, order: 1 });
+    await store.add({ id: 'sav-broker', name: 'Inversiones', is_active: true, order: 2 });
+
+    await accTx.done;
+  }
+} catch {
+  // si el store todavía no existe (version antigua), no hacemos nada
+}
   if (existing) return;
 
   const categories: Category[] = [
@@ -236,11 +272,18 @@ export async function seedDatabase() {
     dashboard_layout: defaultWidgets,
   };
 
-  const tx = db.transaction(['categories', 'subcategories', 'income_sources', 'currency_rates', 'settings'], 'readwrite');
+  const savingsAccounts: SavingsAccount[] = [
+  { id: 'sav-corriente', name: 'Cuenta corriente', is_active: true, order: 0 },
+  { id: 'sav-ahorro', name: 'Cuenta de ahorro', is_active: true, order: 1 },
+  { id: 'sav-broker', name: 'Broker / Inversiones', is_active: true, order: 2 },
+];
+
+  const tx = db.transaction(['categories', 'subcategories', 'income_sources', 'currency_rates', 'settings', 'savings_accounts'], 'readwrite');
   for (const c of categories) await tx.objectStore('categories').add(c);
   for (const s of subcategories) await tx.objectStore('subcategories').add(s);
   for (const i of incomeSources) await tx.objectStore('income_sources').add(i);
   for (const r of rates) await tx.objectStore('currency_rates').add(r);
   await tx.objectStore('settings').add(settings);
+  for (const a of savingsAccounts) await tx.objectStore('savings_accounts').add(a);
   await tx.done;
 }

@@ -86,6 +86,7 @@ export default function SettingsPage() {
       <Section title="Gestión" icon={<Tags className="w-4 h-4" />}>
         <NavRow label="Categorías y subcategorías" onClick={() => navigate('/categories')} />
         <NavRow label="Fuentes de ingreso" onClick={() => navigate('/income-sources')} />
+        <NavRow label="Cuentas (ahorro / inversión)" onClick={() => navigate('/savings-accounts')} />
         <NavRow label="Presupuestos mensuales" onClick={() => navigate('/budgets')} />
       </Section>
     </div>

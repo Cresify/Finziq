@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/contexts/AppContext";
+import ManageSavingsAccounts from "@/pages/ManageSavingsAccounts";
 import Layout from "@/components/Layout";
 import Dashboard from "./pages/Index";
 import Transactions from "./pages/Transactions";
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="/categories" element={<ManageCategories />} />
               <Route path="/budgets" element={<ManageBudgets />} />
               <Route path="/income-sources" element={<ManageIncomeSources />} />
+              <Route path="/savings-accounts" element={<ManageSavingsAccounts />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
