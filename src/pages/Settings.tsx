@@ -1,13 +1,24 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { getAll, putItem, ACCENT_PRESETS, type CurrencyRate } from '@/db/database';
+import { useState, useEffect, useRef } from 'react';
+import {
+  getAll,
+  putItem,
+  ACCENT_PRESETS,
+  clearAllBackupStores,
+  bulkPutItems,
+  type CurrencyRate,
+} from '@/db/database';
 import { useApp } from '@/contexts/AppContext';
-import { Moon, Sun, ChevronRight, Palette, DollarSign, Tags } from 'lucide-react';
+import { Moon, Sun, ChevronRight, Palette, DollarSign, Tags, Download, Upload } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { settings, updateSettings, refresh } = useApp();
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     getAll<CurrencyRate>('currency_rates').then(setCurrencyRates);
@@ -35,6 +46,126 @@ export default function SettingsPage() {
     getAll<CurrencyRate>('currency_rates').then(setCurrencyRates);
     refresh();
   };
+
+  const handleExportBackup = async () => {
+  try {
+    const settingsData = await getAll('settings');
+    const transactions = await getAll('transactions');
+    const categories = await getAll('categories');
+    const subcategories = await getAll('subcategories');
+    const budgets = await getAll('budgets');
+    const currencyRatesData = await getAll('currency_rates');
+    const savingsAccounts = await getAll('savings_accounts');
+    const incomeSources = await getAll('income_sources');
+
+    const backup = {
+      settings: settingsData,
+      transactions,
+      categories,
+      subcategories,
+      budgets,
+      currencyRates: currencyRatesData,
+      savingsAccounts,
+      incomeSources,
+      exportedAt: new Date().toISOString(),
+      app: 'Finziq',
+      version: 1,     
+    };
+
+    const json = JSON.stringify(backup, null, 2);
+    const fileName = `finziq-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+    const isNative = Capacitor.isNativePlatform();
+
+    if (isNative) {
+      const result = await Filesystem.writeFile({
+        path: `Finziq/${fileName}`,
+        data: json,
+        directory: Directory.Documents,
+        encoding: Encoding.UTF8,
+        recursive: true,
+      });
+
+      try {
+        await Share.share({
+          title: 'Backup de Finziq',
+          text: 'Aquí está tu backup de Finziq',
+          url: result.uri,
+          dialogTitle: 'Compartir backup',
+        });
+      } catch {
+        alert(`Backup guardado correctamente.\n\nArchivo: ${fileName}`);
+      }
+    } else {
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      URL.revokeObjectURL(url);
+
+      alert('Backup exportado. Revisa tu carpeta de descargas.');
+    }
+  } catch (error) {
+    console.error('Error exportando backup:', error);
+    alert('Error al exportar el backup.');
+  }
+};
+
+const handleImportBackupClick = () => {
+  importInputRef.current?.click();
+};
+
+const handleImportBackup = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const backup = JSON.parse(text);
+
+    if (backup?.app !== 'Finziq' || backup?.version !== 1) {
+      alert('El archivo no parece ser un backup válido de Finziq.');
+      event.target.value = '';
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Esto reemplazará todos los datos actuales de la app por los del backup. ¿Deseas continuar?'
+    );
+
+    if (!confirmed) {
+      event.target.value = '';
+      return;
+    }
+
+    await clearAllBackupStores();
+
+    await bulkPutItems('settings', backup.settings ?? []);
+    await bulkPutItems('transactions', backup.transactions ?? []);
+    await bulkPutItems('categories', backup.categories ?? []);
+    await bulkPutItems('subcategories', backup.subcategories ?? []);
+    await bulkPutItems('income_sources', backup.incomeSources ?? []);
+    await bulkPutItems('budgets', backup.budgets ?? []);
+    await bulkPutItems('currency_rates', backup.currencyRates ?? []);
+    await bulkPutItems('savings_accounts', backup.savingsAccounts ?? []);
+
+    refresh();
+
+    alert('Backup importado correctamente. La app se actualizará con los nuevos datos.');
+    window.location.reload();
+  } catch (error) {
+    console.error('Error importando backup:', error);
+    alert('No se pudo importar el backup.');
+  } finally {
+    event.target.value = '';
+  }
+};
 
   return (
     <div className="px-4 pt-4 pb-4 max-w-lg mx-auto">
@@ -89,6 +220,32 @@ export default function SettingsPage() {
         <NavRow label="Cuentas (ahorro / inversión)" onClick={() => navigate('/savings-accounts')} />
         <NavRow label="Presupuestos mensuales" onClick={() => navigate('/budgets')} />
       </Section>
+      
+      <Section title="Respaldo" icon={<Download className="w-4 h-4" />}>
+  <button
+    onClick={handleExportBackup}
+    className="w-full flex items-center justify-between py-3 text-sm"
+  >
+    <span>Exportar backup</span>
+    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+  </button>
+
+  <button
+    onClick={handleImportBackupClick}
+    className="w-full flex items-center justify-between py-3 text-sm"
+  >
+    <span>Importar backup</span>
+    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+  </button>
+
+  <input
+    ref={importInputRef}
+    type="file"
+    accept="application/json,.json"
+    className="hidden"
+    onChange={handleImportBackup}
+  />
+</Section>
     </div>
   );
 }

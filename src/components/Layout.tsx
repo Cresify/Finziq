@@ -22,7 +22,7 @@ export default function Layout() {
         <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
           <NavItem to="/" icon={LayoutDashboard} label="Inicio" />
           <NavItem to="/transactions" icon={Receipt} label="Movimientos" />
-          <NavItem to="/planning" icon={FolderKanban} label="Planificación" />
+          <NavItem to="/planning" icon={FolderKanban} label="Plan" />
           <NavItem to="/calendar" icon={CalendarDays} label="Calendario" />
           <NavItem to="/settings" icon={Settings} label="Ajustes" />
         </div>
@@ -37,11 +37,13 @@ function NavItem({ to, icon: Icon, label }: { to: string; icon: React.ComponentT
       to={to}
       end={to === '/'}
       className={({ isActive }) =>
-        `flex flex-col items-center gap-0.5 px-4 py-2 text-xs font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`
-      }
+  `flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
+    isActive ? 'text-primary' : 'text-muted-foreground'
+  }`
+}
     >
-      <Icon className="w-5 h-5" />
-      <span>{label}</span>
+      <Icon className="w-4.5 h-4.5 shrink-0" />
+      <span className="truncate max-w-full">{label}</span>
     </NavLink>
   );
 }

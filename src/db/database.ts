@@ -178,6 +178,48 @@ export async function deleteItem(store: string, id: string): Promise<void> {
   await db.delete(store, id);
 }
 
+export const BACKUP_STORES = [
+  'transactions',
+  'categories',
+  'subcategories',
+  'income_sources',
+  'budgets',
+  'currency_rates',
+  'settings',
+  'savings_accounts',
+] as const;
+
+export type BackupStoreName = typeof BACKUP_STORES[number];
+
+export async function clearStore(store: BackupStoreName): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction(store, 'readwrite');
+  await tx.store.clear();
+  await tx.done;
+}
+
+export async function clearAllBackupStores(): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction(BACKUP_STORES, 'readwrite');
+
+  for (const store of BACKUP_STORES) {
+    await tx.objectStore(store).clear();
+  }
+
+  await tx.done;
+}
+
+export async function bulkPutItems<T>(store: BackupStoreName, items: T[]): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction(store, 'readwrite');
+
+  for (const item of items) {
+    await tx.objectStore(store).put(item);
+  }
+
+  await tx.done;
+}
+
 // ─── Seed data ───────────────────────────────────
 export async function seedDatabase() {
   const db = await getDB();
