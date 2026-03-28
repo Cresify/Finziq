@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Settings, Plus } from 'lucide-react';
+import { LayoutDashboard, Receipt, Settings, Plus, Target, CalendarDays, FolderKanban } from 'lucide-react';
 
 export default function Layout() {
   const navigate = useNavigate();
@@ -20,8 +20,10 @@ export default function Layout() {
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border safe-area-bottom">
         <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
-          <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
+          <NavItem to="/" icon={LayoutDashboard} label="Inicio" />
           <NavItem to="/transactions" icon={Receipt} label="Movimientos" />
+          <NavItem to="/planning" icon={FolderKanban} label="Planificación" />
+          <NavItem to="/calendar" icon={CalendarDays} label="Calendario" />
           <NavItem to="/settings" icon={Settings} label="Ajustes" />
         </div>
       </nav>
