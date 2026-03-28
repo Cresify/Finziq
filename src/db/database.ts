@@ -72,13 +72,22 @@ export type SavingsAccount = {
   is_active: boolean;
 };
 
+export interface Goal {
+  id: string;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  deadline?: string;
+  created_at: number;
+  is_completed: boolean;
+}
 
 // ─── Database ────────────────────────────────────
 let dbInstance: IDBPDatabase | null = null;
 
 export async function getDB() {
   if (dbInstance) return dbInstance;
-  dbInstance = await openDB('GastosApp', 2, {
+  dbInstance = await openDB('GastosApp', 3, {
   upgrade(db, oldVersion) {
     // v1
     if (oldVersion < 1) {
@@ -97,6 +106,12 @@ export async function getDB() {
         db.createObjectStore('savings_accounts', { keyPath: 'id' });
       }
     }
+
+    if (oldVersion < 3) {
+  if (!db.objectStoreNames.contains('goals')) {
+    db.createObjectStore('goals', { keyPath: 'id' });
+  }
+}
   },
 });
   return dbInstance;
@@ -223,7 +238,7 @@ export async function bulkPutItems<T>(store: BackupStoreName, items: T[]): Promi
 // ─── Seed data ───────────────────────────────────
 export async function seedDatabase() {
   const db = await getDB();
-  const existing = await db.get('settings', 'singleton');
+  
   // ✅ Asegura cuentas de ahorro/inversión (aunque settings ya exista)
 try {
   const existingAccounts = await db.getAll('savings_accounts');
@@ -240,8 +255,7 @@ try {
 } catch {
   // si el store todavía no existe (version antigua), no hacemos nada
 }
-  if (existing) return;
-
+  
   const categories: Category[] = [
     { id: 'cat-fixed', name: 'Gastos fijos', is_active: true, order: 0 },
     { id: 'cat-food', name: 'Comida', is_active: true, order: 1 },
@@ -320,12 +334,51 @@ try {
   { id: 'sav-broker', name: 'Broker / Inversiones', is_active: true, order: 2 },
 ];
 
-  const tx = db.transaction(['categories', 'subcategories', 'income_sources', 'currency_rates', 'settings', 'savings_accounts'], 'readwrite');
-  for (const c of categories) await tx.objectStore('categories').add(c);
-  for (const s of subcategories) await tx.objectStore('subcategories').add(s);
-  for (const i of incomeSources) await tx.objectStore('income_sources').add(i);
-  for (const r of rates) await tx.objectStore('currency_rates').add(r);
-  await tx.objectStore('settings').add(settings);
-  for (const a of savingsAccounts) await tx.objectStore('savings_accounts').add(a);
-  await tx.done;
+    // Categorías
+  const existingCategories = await db.getAll('categories');
+  if (!existingCategories || existingCategories.length === 0) {
+    const tx = db.transaction('categories', 'readwrite');
+    for (const c of categories) await tx.store.add(c);
+    await tx.done;
+  }
+
+  // Subcategorías
+  const existingSubcategories = await db.getAll('subcategories');
+  if (!existingSubcategories || existingSubcategories.length === 0) {
+    const tx = db.transaction('subcategories', 'readwrite');
+    for (const s of subcategories) await tx.store.add(s);
+    await tx.done;
+  }
+
+  // Fuentes de ingreso
+  const existingIncomeSources = await db.getAll('income_sources');
+  if (!existingIncomeSources || existingIncomeSources.length === 0) {
+    const tx = db.transaction('income_sources', 'readwrite');
+    for (const i of incomeSources) await tx.store.add(i);
+    await tx.done;
+  }
+
+  // Tasas de cambio
+  const existingRates = await db.getAll('currency_rates');
+  if (!existingRates || existingRates.length === 0) {
+    const tx = db.transaction('currency_rates', 'readwrite');
+    for (const r of rates) await tx.store.add(r);
+    await tx.done;
+  }
+
+  // Settings
+  const existingSettings = await db.get('settings', 'singleton');
+  if (!existingSettings) {
+    const tx = db.transaction('settings', 'readwrite');
+    await tx.store.add(settings);
+    await tx.done;
+  }
+
+  // Cuentas de ahorro / inversión
+  const existingSavingsAccounts = await db.getAll('savings_accounts');
+  if (!existingSavingsAccounts || existingSavingsAccounts.length === 0) {
+    const tx = db.transaction('savings_accounts', 'readwrite');
+    for (const a of savingsAccounts) await tx.store.add(a);
+    await tx.done;
+  }
 }

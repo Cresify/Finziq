@@ -16,6 +16,7 @@ import ManageIncomeSources from "./pages/ManageIncomeSources";
 import NotFound from "./pages/NotFound";
 import Planning from "./pages/Planning";
 import CalendarPage from "./pages/CalendarPage";
+import GoalsPage from "./pages/Goals";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
               <Route path="/" element={<Dashboard />} />
               <Route path="/transactions" element={<Transactions />} />
               <Route path="/planning" element={<Planning />} />
+              <Route path="/goals" element={<GoalsPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/add" element={<AddTransaction />} />

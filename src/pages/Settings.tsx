@@ -24,7 +24,9 @@ export default function SettingsPage() {
     getAll<CurrencyRate>('currency_rates').then(setCurrencyRates);
   }, []);
 
-  if (!settings) return null;
+if (!settings) {
+  return <div className="px-4 pt-4 pb-24 text-sm text-muted-foreground">Cargando ajustes...</div>;
+}
 
   const handleAddCurrency = async () => {
     const code = prompt('Código de moneda (ej: ARS, BRL):')?.toUpperCase().trim();

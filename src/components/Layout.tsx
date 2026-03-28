@@ -1,8 +1,10 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Receipt, Settings, Plus, Target, CalendarDays, FolderKanban } from 'lucide-react';
+import { LayoutDashboard, Receipt, Settings, Plus, CalendarDays, FolderKanban } from 'lucide-react';
+import { useApp } from '@/contexts/AppContext';
 
 export default function Layout() {
   const navigate = useNavigate();
+  const { isReady } = useApp();
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background">
@@ -31,18 +33,26 @@ export default function Layout() {
   );
 }
 
-function NavItem({ to, icon: Icon, label }: { to: string; icon: React.ComponentType<{ className?: string }>; label: string }) {
+function NavItem({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
   return (
     <NavLink
       to={to}
       end={to === '/'}
       className={({ isActive }) =>
-  `flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
-    isActive ? 'text-primary' : 'text-muted-foreground'
-  }`
-}
+        `flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors ${
+          isActive ? 'text-primary' : 'text-muted-foreground'
+        }`
+      }
     >
-      <Icon className="w-4.5 h-4.5 shrink-0" />
+      <Icon className="w-4 h-4 shrink-0" />
       <span className="truncate max-w-full">{label}</span>
     </NavLink>
   );

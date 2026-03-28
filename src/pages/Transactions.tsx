@@ -85,7 +85,9 @@ export default function Transactions() {
     getAll<CurrencyRate>("currency_rates").then(setRates);
   }, [month, refreshFlag]);
 
-  if (!settings) return null;
+  if (!settings) {
+  return <div className="px-4 pt-4 pb-24 text-sm text-muted-foreground">Cargando movimientos...</div>;
+}
 
   const monthLabel = useMemo(() => {
     const [yy, mm] = month.split("-").map(Number);
