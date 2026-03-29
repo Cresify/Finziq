@@ -95,12 +95,24 @@ export interface FinancialEvent {
   created_at: number;
 }
 
+export interface Debt {
+  id: string;
+  name: string;
+  balance: number;
+  interest_rate: number;
+  minimum_payment: number;
+  extra_payment: number;
+  strategy: 'snowball' | 'avalanche';
+  is_active: boolean;
+  created_at: number;
+}
+
 // ─── Database ────────────────────────────────────
 let dbInstance: IDBPDatabase | null = null;
 
 export async function getDB() {
   if (dbInstance) return dbInstance;
-  dbInstance = await openDB('GastosApp', 4, {
+  dbInstance = await openDB('GastosApp', 5, {
   upgrade(db, oldVersion) {
     // v1
     if (oldVersion < 1) {
@@ -131,6 +143,13 @@ if (oldVersion < 4) {
     db.createObjectStore('financial_events', { keyPath: 'id' });
   }
 }
+
+if (oldVersion < 5) {
+  if (!db.objectStoreNames.contains('debts')) {
+    db.createObjectStore('debts', { keyPath: 'id' });
+  }
+}
+
   },
 });
   return dbInstance;

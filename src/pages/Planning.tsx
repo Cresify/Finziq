@@ -30,18 +30,21 @@ export default function Planning() {
           <ChevronRight className="w-5 h-5 text-muted-foreground" />
         </button>
 
-        <div className="rounded-2xl border bg-card p-4 shadow-sm flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <Landmark className="w-5 h-5 mt-0.5 text-primary" />
-            <div>
-              <h2 className="text-lg font-semibold">Plan de deudas</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Organiza tus deudas y crea un plan de pago.
-              </p>
-            </div>
-          </div>
-          <span className="text-xs text-muted-foreground">Próximamente</span>
-        </div>
+        <button
+  onClick={() => navigate("/debts")}
+  className="w-full rounded-2xl border bg-card p-4 shadow-sm text-left flex items-center justify-between"
+>
+  <div className="flex items-start gap-3">
+    <Landmark className="w-5 h-5 mt-0.5 text-primary" />
+    <div>
+      <h2 className="text-lg font-semibold">Plan de deudas</h2>
+      <p className="text-sm text-muted-foreground mt-1">
+        Organiza tus deudas y crea un plan de pago.
+      </p>
+    </div>
+  </div>
+  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+</button>
       </div>
     </div>
   );
