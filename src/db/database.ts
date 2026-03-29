@@ -82,12 +82,25 @@ export interface Goal {
   is_completed: boolean;
 }
 
+export interface FinancialEvent {
+  id: string;
+  name: string;
+  amount: number;
+  day_of_month: number;
+  hour: number;
+  minute: number;
+  type: 'bill' | 'subscription' | 'debt' | 'other';
+  note?: string;
+  is_active: boolean;
+  created_at: number;
+}
+
 // ─── Database ────────────────────────────────────
 let dbInstance: IDBPDatabase | null = null;
 
 export async function getDB() {
   if (dbInstance) return dbInstance;
-  dbInstance = await openDB('GastosApp', 3, {
+  dbInstance = await openDB('GastosApp', 4, {
   upgrade(db, oldVersion) {
     // v1
     if (oldVersion < 1) {
@@ -110,6 +123,12 @@ export async function getDB() {
     if (oldVersion < 3) {
   if (!db.objectStoreNames.contains('goals')) {
     db.createObjectStore('goals', { keyPath: 'id' });
+  }
+}
+
+if (oldVersion < 4) {
+  if (!db.objectStoreNames.contains('financial_events')) {
+    db.createObjectStore('financial_events', { keyPath: 'id' });
   }
 }
   },
