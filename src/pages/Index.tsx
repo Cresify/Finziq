@@ -8,6 +8,7 @@ import { BudgetProgress } from '@/components/dashboard/BudgetProgress';
 import { TopLeaks } from '@/components/dashboard/TopLeaks';
 import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { CapitalAccumulatedChart } from "@/components/dashboard/CapitalAccumulatedChart";
+import { FinancialRadiography } from "@/components/dashboard/FinancialRadiography";
 
 function shiftMonth(month: string, delta: number): string {
   const [y, m] = month.split('-').map(Number);
@@ -27,8 +28,9 @@ const WIDGET_COMPONENTS: Record<string, React.ComponentType<any>> = {
   donut: ExpenseDonut,
   trend: TrendChart,
   budget: BudgetProgress,
-  'top-leaks': TopLeaks,
+  "top-leaks": TopLeaks,
   capital: CapitalAccumulatedChart,
+  radiography: FinancialRadiography,
 };
 
 export default function Dashboard() {
@@ -49,6 +51,15 @@ export default function Dashboard() {
 if (!widgets.some(w => w.id === 'capital')) {
   widgets.push({ id: 'capital', label: 'Capital acumulado', order: 99, visible: true });
 }
+
+if (!widgets.some(w => w.id === "radiography")) {
+  widgets.push({
+    id: "radiography",
+    label: "Radiografía financiera",
+    order: 100,
+    visible: true,
+  });
+} 
 
 widgets.sort((a, b) => a.order - b.order);
   const baseCurrency = settings.base_currency;
