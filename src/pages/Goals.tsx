@@ -51,7 +51,7 @@ function getGoalPlan(
       status: "tight" as GoalPlanStatus,
       message: "Agrega una fecha objetivo para ver cuánto deberías ahorrar al mes.",
     };
-  }
+  } 
 
   const monthlyNeeded = Math.ceil(remainingAmount / monthsLeft);
 

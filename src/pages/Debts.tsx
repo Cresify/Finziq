@@ -337,22 +337,28 @@ export default function DebtsPage() {
         ) : (
           <div className="space-y-3">
             {debts.map((debt) => {
-  const totalPayment = debt.minimum_payment + debt.extra_payment;
+ const totalPayment = debt.minimum_payment + debt.extra_payment;
 
-  const simulation = simulateDebt(
-    debt.balance,
-    debt.interest_rate,
-    totalPayment
-  );
+const suggestedExtra = Math.max(
+  10000,
+  Math.round(totalPayment * 0.2 / 1000) * 1000
+);
 
-  const fasterSimulation = simulateDebt(
-    debt.balance,
-    debt.interest_rate,
-    totalPayment + 50000
-  );
+const simulation = simulateDebt(
+  debt.balance,
+  debt.interest_rate,
+  totalPayment
+);
 
-  const monthsSaved = simulation.months - fasterSimulation.months;
-  const interestSaved = simulation.totalInterest - fasterSimulation.totalInterest;
+const fasterSimulation = simulateDebt(
+  debt.balance,
+  debt.interest_rate,
+  totalPayment + suggestedExtra
+);
+
+const monthsSaved = simulation.months - fasterSimulation.months;
+const interestSaved = simulation.totalInterest - fasterSimulation.totalInterest;
+  
 
   return (
               <div key={debt.id} className="rounded-2xl border bg-card p-4 shadow-sm">
@@ -402,7 +408,7 @@ export default function DebtsPage() {
     <span className="font-medium text-foreground">
       {simulation.months} meses
     </span>
-  </p>
+  </p> 
 
   <p className="mt-1 text-xs text-muted-foreground">
     Intereses estimados:{" "}
@@ -415,7 +421,7 @@ export default function DebtsPage() {
     <p>
       Si aumentas tu pago en{" "}
       <span className="font-medium text-foreground">
-        {formatMoney(50000, currency)}
+        {formatMoney(suggestedExtra, currency)}
       </span>
       :
     </p>
