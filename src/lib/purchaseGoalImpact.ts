@@ -71,9 +71,10 @@ export function getPurchaseGoalImpact(params: {
 
     const monthlyNeeded = Math.ceil(remaining / monthsLeft);
 
+    // Si ya no hay margen disponible después de la compra,
+    // no intentamos calcular un retraso absurdo.
     if (newFreeCapacity <= 0) {
-      const estimatedMonths = Math.ceil(remaining / Math.max(freeCapacity, 1));
-      const delayMonths = Math.max(estimatedMonths - monthsLeft, 1);
+      const delayMonths = Math.max(monthsLeft, 1);
 
       if (!worstGoal || delayMonths > worstGoal.delayMonths) {
         worstGoal = {
@@ -85,6 +86,8 @@ export function getPurchaseGoalImpact(params: {
       continue;
     }
 
+    // Si aún hay margen, pero ya no alcanza para esa meta,
+    // estimamos el nuevo plazo de forma normal.
     if (newFreeCapacity < monthlyNeeded) {
       const newMonthsNeeded = Math.ceil(remaining / newFreeCapacity);
       const delayMonths = Math.max(newMonthsNeeded - monthsLeft, 1);
@@ -102,6 +105,16 @@ export function getPurchaseGoalImpact(params: {
     return {
       affected: false,
       message: "Esta compra no debería afectar tus metas actuales.",
+    };
+  }
+
+  // Si el retraso es muy alto, usamos un mensaje más natural
+  if (worstGoal.delayMonths >= 12) {
+    return {
+      affected: true,
+      goalName: worstGoal.name,
+      delayMonths: worstGoal.delayMonths,
+      message: `Esta compra comprometería fuertemente tu meta "${worstGoal.name}" y podría retrasarla de forma importante.`,
     };
   }
 

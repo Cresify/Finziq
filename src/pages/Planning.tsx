@@ -249,27 +249,16 @@ const evaluation =
   </p>
 )}
 
-{goalImpact && (
-  <div className="mt-3 rounded-lg bg-background/70 border border-border p-3">
-    <p className="text-xs font-medium text-foreground">
-      Impacto en metas
-    </p>
-    <p className="mt-1 text-xs text-muted-foreground">
-      {goalImpact.message}
-    </p>
-  </div>
-)}
-
       <p className="mt-2 text-xs text-muted-foreground">
         Margen mensual disponible:{" "}
         <span className="font-medium text-foreground">
           {formatMoney(evaluation.freeCapacity, currency)}
         </span>
       </p>
-
       <p className="mt-1 text-xs text-muted-foreground">
   Esta compra representa{" "}
   <span className="font-medium text-foreground">
+    
     {evaluation.freeCapacity > 0
   ? `${Math.round((monthlyImpact / evaluation.freeCapacity) * 100)}%`
   : "Sin margen disponible"}
@@ -280,6 +269,7 @@ const evaluation =
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
         {evaluation.message}
       </p>
+      
       {advice && (
   <div className="mt-3 rounded-lg bg-background/70 border border-border p-3">
     <p className="text-xs font-medium text-foreground">
@@ -295,6 +285,18 @@ const evaluation =
     )}
   </div>
 )}
+
+{goalImpact && (
+  <div className="mt-3 rounded-lg bg-background/70 border border-border p-3">
+    <p className="text-xs font-medium text-foreground">
+      Impacto en metas
+    </p>
+    <p className="mt-1 text-xs text-muted-foreground">
+      {goalImpact.message}
+    </p>
+  </div>
+)}
+
     </div>
   )}
 </div>
