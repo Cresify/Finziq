@@ -18,6 +18,34 @@ function getStrategyDescription(strategy: Debt["strategy"]) {
   return "Pagas primero la deuda con mayor interés para ahorrar más dinero.";
 }
 
+function simulateDebt(
+  balance: number,
+  annualRate: number,
+  monthlyPayment: number
+) {
+  let debt = balance;
+  const monthlyRate = annualRate / 100 / 12;
+
+  let months = 0;
+  let totalInterest = 0;
+
+  while (debt > 0 && months < 600) {
+    const interest = debt * monthlyRate;
+    totalInterest += interest;
+
+    debt = debt + interest - monthlyPayment;
+
+    if (debt < 0) debt = 0;
+
+    months++;
+  }
+
+  return {
+    months,
+    totalInterest,
+  };
+}
+
 export default function DebtsPage() {
   const { settings, refreshFlag, refresh } = useApp();
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -162,7 +190,7 @@ export default function DebtsPage() {
 
   if (!settings) {
     return <div className="px-4 pt-4 pb-24 text-sm text-muted-foreground">Cargando deudas...</div>;
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background p-4 pb-24">
@@ -308,7 +336,25 @@ export default function DebtsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {debts.map((debt) => (
+            {debts.map((debt) => {
+  const totalPayment = debt.minimum_payment + debt.extra_payment;
+
+  const simulation = simulateDebt(
+    debt.balance,
+    debt.interest_rate,
+    totalPayment
+  );
+
+  const fasterSimulation = simulateDebt(
+    debt.balance,
+    debt.interest_rate,
+    totalPayment + 50000
+  );
+
+  const monthsSaved = simulation.months - fasterSimulation.months;
+  const interestSaved = simulation.totalInterest - fasterSimulation.totalInterest;
+
+  return (
               <div key={debt.id} className="rounded-2xl border bg-card p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -332,41 +378,86 @@ export default function DebtsPage() {
                     {formatMoney(debt.minimum_payment + debt.extra_payment, currency)}
                   </span>
                   <div className="mt-2">
-  <span className="font-medium">
-    Estrategia: {debt.strategy === "snowball" ? "Bola de nieve" : "Avalancha"}
-  </span>
-  <p className="text-[11px] text-muted-foreground mt-1">
-    {getStrategyDescription(debt.strategy)}
-  </p>
-</div>
+                  <span className="font-medium">
+                    Estrategia: {debt.strategy === "snowball" ? "Bola de nieve" : "Avalancha"}
+                  </span>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {getStrategyDescription(debt.strategy)}
+                    </p>
+                    </div>
                 </div>
 
-                <div className="mt-4 flex gap-2">
-  <button
-    onClick={() => handlePayDebt(debt)}
-    className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
-  >
-    Abonar
-  </button>
+<div className="mt-3 rounded-xl border border-border bg-background p-3">
+  <div className="flex items-center justify-between">
+    <span className="text-sm font-medium text-foreground">
+      Plan de salida
+    </span>
+    <span className="text-xs font-semibold text-primary">
+      {simulation.months} meses
+    </span>
+  </div>
 
-  <button
-    onClick={() => handleEditDebt(debt)}
-    className="flex-1 h-10 rounded-xl bg-secondary text-secondary-foreground text-sm font-medium flex items-center justify-center gap-2"
-  >
-    <Pencil className="w-4 h-4" />
-    Editar
-  </button>
+  <p className="mt-2 text-xs text-muted-foreground">
+    Terminarías de pagar en aproximadamente{" "}
+    <span className="font-medium text-foreground">
+      {simulation.months} meses
+    </span>
+  </p>
 
-  <button
-    onClick={() => handleDeleteDebt(debt.id)}
-    className="flex-1 h-10 rounded-xl border border-border text-sm font-medium flex items-center justify-center gap-2 text-destructive"
-  >
-    <Trash2 className="w-4 h-4" />
-    Eliminar
-  </button>
+  <p className="mt-1 text-xs text-muted-foreground">
+    Intereses estimados:{" "}
+    <span className="font-medium text-foreground">
+      {formatMoney(Math.round(simulation.totalInterest), currency)}
+    </span>
+  </p>
+
+  <div className="mt-2 text-xs text-muted-foreground">
+    <p>
+      Si aumentas tu pago en{" "}
+      <span className="font-medium text-foreground">
+        {formatMoney(50000, currency)}
+      </span>
+      :
+    </p>
+    <p className="mt-1">
+      • Terminas {monthsSaved} meses antes
+    </p>
+    <p>
+      • Ahorras{" "}
+      <span className="font-medium text-foreground">
+        {formatMoney(Math.round(interestSaved), currency)}
+      </span>{" "}
+      en intereses
+    </p>
+  </div>
 </div>
+
+                <div className="mt-4 flex gap-2">
+                <button
+                onClick={() => handlePayDebt(debt)}
+                className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+                >
+                Abonar
+                </button>
+
+                <button
+                  onClick={() => handleEditDebt(debt)}
+                  className="flex-1 h-10 rounded-xl bg-secondary text-secondary-foreground text-sm font-medium flex items-center justify-center gap-2"
+                >
+                <Pencil className="w-4 h-4" />
+                  Editar
+                </button>
+
+                <button
+                  onClick={() => handleDeleteDebt(debt.id)}
+                  className="flex-1 h-10 rounded-xl border border-border text-sm font-medium flex items-center justify-center gap-2 text-destructive"
+                >
+                <Trash2 className="w-4 h-4" />
+                  Eliminar
+                </button>
+                </div>
               </div>
-            ))}
+            );})}
           </div>
         )}
       </div>

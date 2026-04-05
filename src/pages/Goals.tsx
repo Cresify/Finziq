@@ -63,14 +63,14 @@ function getGoalPlan(
     message = `Tu meta está muy cerca. Necesitarías ahorrar ${formatMoney(monthlyNeeded, currency)} al mes.`;
   } else if (monthsLeft <= 6) {
     status = "tight";
-    message = `Meta exigente. Intenta aportar al menos ${formatMoney(monthlyNeeded, currency)} al mes.`;
+    message = `Necesitas aportar al menos ${formatMoney(monthlyNeeded, currency)} al mes.`;
   } else {
     status = "on_track";
     message = `Buen ritmo posible. Si aportas ${formatMoney(monthlyNeeded, currency)} al mes, deberías llegar bien.`;
   }
 
   return {
-    monthsLeft,
+    monthsLeft, 
     monthlyNeeded,
     status,
     message,
