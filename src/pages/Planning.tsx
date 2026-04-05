@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Flag, Landmark } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { formatMoney, getAll, type Debt, type Transaction } from "@/db/database";
+import { formatMoney, getAll, type Debt, type Goal, type Transaction } from "@/db/database";
 import {
   evaluatePurchase,
   getPurchaseDecisionBg,
@@ -9,6 +9,8 @@ import {
   getPurchaseDecisionLabel,
 } from "@/lib/purchaseAdvisor";
 import { useApp } from "@/contexts/AppContext";
+import { getPurchaseAdvice } from "@/lib/purchaseAdvice";
+import { getPurchaseGoalImpact } from "@/lib/purchaseGoalImpact";
 
 
 export default function Planning() {
@@ -19,13 +21,17 @@ const [itemName, setItemName] = useState("");
 const [itemPrice, setItemPrice] = useState("");
 const [transactions, setTransactions] = useState<Transaction[]>([]);
 const [debts, setDebts] = useState<Debt[]>([]);
+const [goals, setGoals] = useState<Goal[]>([]);
 const [showEvaluation, setShowEvaluation] = useState(false);
+const [paymentMode, setPaymentMode] = useState<"full" | "installments">("full");
+const [installments, setInstallments] = useState("3");
 
 useEffect(() => {
   getAll<Transaction>("transactions").then(setTransactions);
   getAll<Debt>("debts").then((items) => {
     setDebts(items.filter((item) => item.is_active));
   });
+  getAll<Goal>("goals").then(setGoals);
 }, []);
 
 useEffect(() => {
@@ -73,15 +79,41 @@ const monthlyDebtPayments = useMemo(() => {
 }, [debts]);
 
 const parsedPrice = Number(itemPrice || "0");
+const parsedInstallments = Number(installments || "1");
+
+const monthlyImpact =
+  paymentMode === "installments" && parsedInstallments > 0
+    ? parsedPrice / parsedInstallments
+    : parsedPrice;
 
 const evaluation =
-  parsedPrice > 0
+  monthlyImpact > 0
     ? evaluatePurchase(
-        parsedPrice,
+        monthlyImpact,
         monthlyIncome,
         monthlyExpenses,
         monthlyDebtPayments
       )
+    : null;
+
+    const goalImpact =
+  evaluation
+    ? getPurchaseGoalImpact({
+        goals,
+        freeCapacity: evaluation.freeCapacity,
+        monthlyImpact,
+      })
+    : null;
+
+    const advice =
+  evaluation
+    ? getPurchaseAdvice({
+        price: parsedPrice,
+        monthlyImpact,
+        freeCapacity: evaluation.freeCapacity,
+        paymentMode,
+        installments: parsedInstallments > 0 ? parsedInstallments : 1,
+      })
     : null;
 
 
@@ -158,6 +190,31 @@ const evaluation =
       />
     </div>
 
+    <div>
+  <label className="text-sm font-medium block mb-1">Tipo de pago</label>
+  <select
+    value={paymentMode}
+    onChange={(e) => setPaymentMode(e.target.value as "full" | "installments")}
+    className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm"
+  >
+    <option value="full">Pago único</option>
+    <option value="installments">En cuotas</option>
+  </select>
+</div>
+
+{paymentMode === "installments" && (
+  <div>
+    <label className="text-sm font-medium block mb-1">Número de cuotas</label>
+    <input
+      type="number"
+      value={installments}
+      onChange={(e) => setInstallments(e.target.value)}
+      placeholder="Ej: 3, 6, 12"
+      className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm"
+    />
+  </div>
+)}
+
     <button
   onClick={() => setShowEvaluation(true)}
   disabled={!parsedPrice || parsedPrice <= 0}
@@ -179,8 +236,29 @@ const evaluation =
       </div>
 
       <p className="mt-2 text-sm font-medium text-foreground">
-        {itemName?.trim() ? itemName : "Esta compra"} por {formatMoney(parsedPrice, currency)}
-      </p>
+  {itemName?.trim() ? itemName : "Esta compra"} por {formatMoney(parsedPrice, currency)}
+</p>
+
+{paymentMode === "installments" && (
+  <p className="mt-1 text-xs text-muted-foreground">
+    Impacto mensual:{" "}
+    <span className="font-medium text-foreground">
+      {formatMoney(monthlyImpact, currency)}
+    </span>{" "}
+    durante {parsedInstallments} meses
+  </p>
+)}
+
+{goalImpact && (
+  <div className="mt-3 rounded-lg bg-background/70 border border-border p-3">
+    <p className="text-xs font-medium text-foreground">
+      Impacto en metas
+    </p>
+    <p className="mt-1 text-xs text-muted-foreground">
+      {goalImpact.message}
+    </p>
+  </div>
+)}
 
       <p className="mt-2 text-xs text-muted-foreground">
         Margen mensual disponible:{" "}
@@ -192,7 +270,9 @@ const evaluation =
       <p className="mt-1 text-xs text-muted-foreground">
   Esta compra representa{" "}
   <span className="font-medium text-foreground">
-    {Math.round((parsedPrice / evaluation.freeCapacity) * 100)}%
+    {evaluation.freeCapacity > 0
+  ? `${Math.round((monthlyImpact / evaluation.freeCapacity) * 100)}%`
+  : "Sin margen disponible"}
   </span>{" "}
   de tu margen mensual
 </p>
@@ -200,6 +280,21 @@ const evaluation =
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
         {evaluation.message}
       </p>
+      {advice && (
+  <div className="mt-3 rounded-lg bg-background/70 border border-border p-3">
+    <p className="text-xs font-medium text-foreground">
+      Recomendación accionable
+    </p>
+    <p className="mt-1 text-xs text-muted-foreground">
+      {advice.primary}
+    </p>
+    {advice.secondary && (
+      <p className="mt-1 text-xs text-muted-foreground">
+        {advice.secondary}
+      </p>
+    )}
+  </div>
+)}
     </div>
   )}
 </div>
