@@ -255,16 +255,20 @@ const evaluation =
           {formatMoney(evaluation.freeCapacity, currency)}
         </span>
       </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-  Esta compra representa{" "}
-  <span className="font-medium text-foreground">
-    
-    {evaluation.freeCapacity > 0
-  ? `${Math.round((monthlyImpact / evaluation.freeCapacity) * 100)}%`
-  : "Sin margen disponible"}
-  </span>{" "}
-  de tu margen mensual
-</p>
+
+      {evaluation.freeCapacity > 0 ? (
+  <p className="mt-1 text-xs text-muted-foreground">
+    Esta compra representa{" "}
+    <span className="font-medium text-foreground">
+      {Math.round((monthlyImpact / evaluation.freeCapacity) * 100)}%
+    </span>{" "}
+    de tu margen mensual
+  </p>
+) : (
+  <p className="mt-1 text-xs text-red-600">
+    No tienes margen mensual disponible actualmente
+  </p>
+)}
 
       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
         {evaluation.message}
@@ -287,7 +291,7 @@ const evaluation =
 )}
 
 {goalImpact && (
-  <div className="mt-3 rounded-lg bg-background/70 border border-border p-3">
+  <div className="mt-3 rounded-lg bg-orange-50 border border-orange-200 p-3">
     <p className="text-xs font-medium text-foreground">
       Impacto en metas
     </p>
