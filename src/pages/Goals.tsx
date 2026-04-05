@@ -3,6 +3,110 @@ import { Plus, Target, X, Pencil, Trash2, Wallet } from "lucide-react";
 import { getAll, type Goal, formatMoney, putItem, genId, deleteItem } from "@/db/database";
 import { useApp } from "@/contexts/AppContext";
 
+type GoalPlanStatus = "on_track" | "tight" | "behind" | "completed";
+
+function getMonthsLeft(deadline?: string) {
+  if (!deadline) return null;
+
+  const today = new Date();
+  const endDate = new Date(deadline);
+
+  if (isNaN(endDate.getTime())) return null;
+
+  const yearDiff = endDate.getFullYear() - today.getFullYear();
+  const monthDiff = endDate.getMonth() - today.getMonth();
+
+  let monthsLeft = yearDiff * 12 + monthDiff;
+
+  if (endDate.getDate() > today.getDate()) {
+    monthsLeft += 1;
+  }
+
+  return Math.max(monthsLeft, 1);
+}
+
+function getGoalPlan(
+  targetAmount: number,
+  currentAmount: number,
+  deadline?: string,
+  currency: string = "CLP"
+) {
+  const remainingAmount = Math.max(targetAmount - currentAmount, 0);
+
+  if (remainingAmount <= 0) {
+    return {
+      monthsLeft: 0,
+      monthlyNeeded: 0,
+      status: "completed" as GoalPlanStatus,
+      message: "Meta completada. Ya alcanzaste tu objetivo.",
+    };
+  }
+
+  const monthsLeft = getMonthsLeft(deadline);
+
+  if (!monthsLeft) {
+    return {
+      monthsLeft: null,
+      monthlyNeeded: null,
+      status: "tight" as GoalPlanStatus,
+      message: "Agrega una fecha objetivo para ver cuánto deberías ahorrar al mes.",
+    };
+  }
+
+  const monthlyNeeded = Math.ceil(remainingAmount / monthsLeft);
+
+  let status: GoalPlanStatus = "tight";
+  let message = `Debes ahorrar ${formatMoney(monthlyNeeded, currency)} al mes para llegar a tiempo.`;
+
+  if (monthsLeft <= 2) {
+    status = "behind";
+    message = `Tu meta está muy cerca. Necesitarías ahorrar ${formatMoney(monthlyNeeded, currency)} al mes.`;
+  } else if (monthsLeft <= 6) {
+    status = "tight";
+    message = `Meta exigente. Intenta aportar al menos ${formatMoney(monthlyNeeded, currency)} al mes.`;
+  } else {
+    status = "on_track";
+    message = `Buen ritmo posible. Si aportas ${formatMoney(monthlyNeeded, currency)} al mes, deberías llegar bien.`;
+  }
+
+  return {
+    monthsLeft,
+    monthlyNeeded,
+    status,
+    message,
+  };
+}
+
+function getGoalStatusLabel(status: GoalPlanStatus) {
+  switch (status) {
+    case "completed":
+      return "Completada";
+    case "on_track":
+      return "Vas bien";
+    case "tight":
+      return "Justo";
+    case "behind":
+      return "Atrasado";
+    default:
+      return "";
+  }
+}
+
+function getGoalStatusColor(status: GoalPlanStatus) {
+  switch (status) {
+    case "completed":
+      return "text-green-600";
+    case "on_track":
+      return "text-emerald-600";
+    case "tight":
+      return "text-amber-600";
+    case "behind":
+      return "text-red-600";
+    default:
+      return "text-muted-foreground";
+  }
+}
+
 export default function GoalsPage() {
   const { settings, refreshFlag, refresh } = useApp();
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -249,6 +353,13 @@ const handleSaveContribution = async (goal: Goal) => {
 
               const remaining = Math.max(goal.target_amount - goal.current_amount, 0);
 
+              const plan = getGoalPlan(
+                goal.target_amount,
+                goal.current_amount,
+                goal.deadline,
+                currency
+              );
+
               return (
                 <div key={goal.id} className="rounded-2xl border bg-card p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
@@ -278,6 +389,33 @@ const handleSaveContribution = async (goal: Goal) => {
   {goal.is_completed && (
     <span className="text-primary font-medium">Meta completada</span>
   )}
+</div>
+
+<div className="mt-3 rounded-xl border border-border bg-background p-3">
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-sm font-medium text-foreground">
+      Plan para lograr tu meta
+    </span>
+    <span className={`text-xs font-semibold ${getGoalStatusColor(plan.status)}`}>
+      {getGoalStatusLabel(plan.status)}
+    </span>
+  </div>
+
+  {plan.monthlyNeeded !== null && (
+    <p className="mt-2 text-sm font-medium text-foreground">
+      Ahorro mensual necesario: {formatMoney(plan.monthlyNeeded, currency)}
+    </p>
+  )}
+
+  {plan.monthsLeft !== null && (
+    <p className="mt-1 text-xs text-muted-foreground">
+      Meses restantes: {plan.monthsLeft}
+    </p>
+  )}
+
+  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+    {plan.message}
+  </p>
 </div>
 
 <div className="mt-4 flex gap-2 flex-wrap">
