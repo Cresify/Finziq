@@ -8,6 +8,8 @@ import {
   type Goal,
   type Debt,
 } from "@/db/database";
+import PremiumLockCard from "@/components/PremiumLockCard";
+import { useApp } from "@/contexts/AppContext";
 
 interface Props {
   month: string; // YYYY-MM
@@ -139,6 +141,9 @@ function getRecommendations({
 }
 
 export function FinancialRadiography({ month, baseCurrency, rates }: Props) {
+  const { settings } = useApp();
+  const isPremium = settings?.plan_type === "premium";
+  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -236,13 +241,14 @@ export function FinancialRadiography({ month, baseCurrency, rates }: Props) {
           label="Ahorro neto"
           value={formatMoney(data.savings, baseCurrency)}
           positive={data.savings >= 0}
-        />
+        /> 
         <MetricCard
           label="Deuda total"
           value={formatMoney(data.totalDebt, baseCurrency)}
         />
       </div>
 
+      {isPremium ? (
       <div className="rounded-2xl border bg-card p-4 shadow-sm">
         <h4 className="text-sm font-semibold mb-2">Lectura rápida</h4>
         <div className="space-y-1 text-sm text-muted-foreground">
@@ -265,19 +271,35 @@ export function FinancialRadiography({ month, baseCurrency, rates }: Props) {
           </p>
         </div>
       </div>
+      ) : (
+  <PremiumLockCard
+    compact
+    title="Lectura rápida avanzada"
+    description="Desbloquea insights automáticos sobre tu balance, nivel de deuda y estado de tus metas."
+  />
+)}
+
+      {isPremium ? (
       <div className="rounded-2xl border bg-card p-4 shadow-sm">
-  <h4 className="text-sm font-semibold mb-2">Recomendaciones</h4>
-  <div className="space-y-2">
-    {data.recommendations.map((item, index) => (
-      <div
+        <h4 className="text-sm font-semibold mb-2">Recomendaciones</h4>
+        <div className="space-y-2">
+          {data.recommendations.map((item, index) => (
+        <div
         key={index}
         className="text-sm text-muted-foreground rounded-xl bg-background border border-border px-3 py-2"
-      >
+        >
         {item}
-      </div>
-    ))}
-  </div>
-</div> 
+        </div>
+        ))}
+        </div>
+      </div> 
+      ) : (
+  <PremiumLockCard
+    compact
+    title="Recomendaciones inteligentes"
+    description="Desbloquea recomendaciones personalizadas para mejorar tu salud financiera cada mes."
+  />
+)}
     </div>
   );
 }

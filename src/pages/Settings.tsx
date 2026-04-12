@@ -13,10 +13,12 @@ import { Moon, Sun, ChevronRight, Palette, DollarSign, Tags, Download, Upload } 
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import PremiumLockCard from "@/components/PremiumLockCard";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { settings, updateSettings, refresh } = useApp();
+  const isPremium = settings?.plan_type === "premium";
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -248,6 +250,24 @@ const handleImportBackup = async (event: React.ChangeEvent<HTMLInputElement>) =>
     onChange={handleImportBackup}
   />
 </Section>
+<div className="pt-2 pb-4 text-center">
+  <p className="text-xs text-muted-foreground">
+    FinzIQ v{__APP_VERSION__}
+  </p>
+</div>
+
+{/* SOLO PARA TEST */}
+<button
+  onClick={() =>
+    updateSettings({
+      plan_type: settings.plan_type === "premium" ? "free" : "premium",
+    })
+  }
+  className="w-full mt-3 text-xs text-primary"
+>
+  Cambiar a {settings.plan_type === "premium" ? "Free" : "Premium"}
+</button>
+
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Target, X, Pencil, Trash2, Wallet } from "lucide-react";
 import { getAll, type Goal, formatMoney, putItem, genId, deleteItem } from "@/db/database";
 import { useApp } from "@/contexts/AppContext";
+import PremiumLockCard from "@/components/PremiumLockCard"; 
 
 type GoalPlanStatus = "on_track" | "tight" | "behind" | "completed";
 
@@ -109,6 +110,7 @@ function getGoalStatusColor(status: GoalPlanStatus) {
 
 export default function GoalsPage() {
   const { settings, refreshFlag, refresh } = useApp();
+  const isPremium = settings?.plan_type === "premium";
   const [goals, setGoals] = useState<Goal[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
@@ -389,8 +391,9 @@ const handleSaveContribution = async (goal: Goal) => {
   {goal.is_completed && (
     <span className="text-primary font-medium">Meta completada</span>
   )}
-</div>
+</div> 
 
+{isPremium ? (
 <div className="mt-3 rounded-xl border border-border bg-background p-3">
   <div className="flex items-center justify-between gap-2">
     <span className="text-sm font-medium text-foreground">
@@ -417,6 +420,14 @@ const handleSaveContribution = async (goal: Goal) => {
     {plan.message}
   </p>
 </div>
+) : (
+  <PremiumLockCard
+    compact
+    title="Plan inteligente de metas"
+    description="Desbloquea cuánto ahorrar al mes, estado de avance y recomendaciones para llegar a tiempo."
+  />
+)}
+
 
 <div className="mt-4 flex gap-2 flex-wrap">
   <button

@@ -6,7 +6,7 @@ export interface Transaction {
   type: 'income' | 'expense' | 'savings_executed';
   date: number;
   amount: number;
-  currency: string;
+  currency: string; 
   note?: string;
   income_source_id?: string;
   category_id?: string;
@@ -63,6 +63,7 @@ export interface AppSettings {
   theme_mode: 'light' | 'dark';
   accent_color: string;
   dashboard_layout: DashboardWidget[];
+  plan_type: "free" | "premium";
 }
 
 export type SavingsAccount = {
@@ -364,6 +365,7 @@ try {
     theme_mode: 'light',
     accent_color: 'emerald',
     dashboard_layout: defaultWidgets,
+    plan_type: "free",
   };
 
   const savingsAccounts: SavingsAccount[] = [

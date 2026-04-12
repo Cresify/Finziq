@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Landmark, Plus, X, Pencil, Trash2 } from "lucide-react";
 import { getAll, putItem, deleteItem, genId, formatMoney, type Debt } from "@/db/database";
 import { useApp } from "@/contexts/AppContext";
+import PremiumLockCard from "@/components/PremiumLockCard";
 
 function getPriorityLabel(debt: Debt) {
   if (debt.strategy === "snowball") {
@@ -48,6 +49,7 @@ function simulateDebt(
 
 export default function DebtsPage() {
   const { settings, refreshFlag, refresh } = useApp();
+  const isPremium = settings?.plan_type === "premium";
   const [debts, setDebts] = useState<Debt[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingDebtId, setEditingDebtId] = useState<string | null>(null);
@@ -393,6 +395,7 @@ const interestSaved = simulation.totalInterest - fasterSimulation.totalInterest;
                     </div>
                 </div>
 
+{isPremium ? (
 <div className="mt-3 rounded-xl border border-border bg-background p-3">
   <div className="flex items-center justify-between">
     <span className="text-sm font-medium text-foreground">
@@ -415,7 +418,7 @@ const interestSaved = simulation.totalInterest - fasterSimulation.totalInterest;
     <span className="font-medium text-foreground">
       {formatMoney(Math.round(simulation.totalInterest), currency)}
     </span>
-  </p>
+  </p> 
 
   <div className="mt-2 text-xs text-muted-foreground">
     <p>
@@ -437,6 +440,13 @@ const interestSaved = simulation.totalInterest - fasterSimulation.totalInterest;
     </p>
   </div>
 </div>
+) : (
+  <PremiumLockCard
+    compact
+    title="Plan inteligente de deudas"
+    description="Desbloquea simulación de pago, ahorro en intereses y escenarios para salir antes de tus deudas."
+  />
+)}
 
                 <div className="mt-4 flex gap-2">
                 <button

@@ -11,12 +11,13 @@ import {
 import { useApp } from "@/contexts/AppContext";
 import { getPurchaseAdvice } from "@/lib/purchaseAdvice";
 import { getPurchaseGoalImpact } from "@/lib/purchaseGoalImpact";
+import PremiumLockCard from "@/components/PremiumLockCard";
 
 
 export default function Planning() {
 const navigate = useNavigate();
 const { settings } = useApp();
-
+const isPremium = settings?.plan_type === "premium";
 const [itemName, setItemName] = useState("");
 const [itemPrice, setItemPrice] = useState("");
 const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -158,6 +159,8 @@ const evaluation =
   </div>
   <ChevronRight className="w-5 h-5 text-muted-foreground" />
 </button>
+
+{isPremium ? (
 <div className="rounded-2xl border bg-card p-4 shadow-sm space-y-4">
   <div>
     <h2 className="text-lg font-semibold">¿Puedo comprar esto?</h2>
@@ -219,7 +222,7 @@ const evaluation =
   onClick={() => setShowEvaluation(true)}
   disabled={!parsedPrice || parsedPrice <= 0}
   className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
->
+  >
       Evaluar compra
     </button>
   </div>
@@ -255,7 +258,7 @@ const evaluation =
           {formatMoney(evaluation.freeCapacity, currency)}
         </span>
       </p>
-
+ 
       {evaluation.freeCapacity > 0 ? (
   <p className="mt-1 text-xs text-muted-foreground">
     Esta compra representa{" "}
@@ -304,6 +307,12 @@ const evaluation =
     </div>
   )}
 </div>
+) : (
+  <PremiumLockCard
+    title="Evaluador de compras"
+    description="Descubre si una compra te conviene, en cuotas o al contado, y cómo impacta tus metas."
+  />
+)}
       </div>
     </div>
   );
