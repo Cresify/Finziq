@@ -257,16 +257,7 @@ const handleImportBackup = async (event: React.ChangeEvent<HTMLInputElement>) =>
 </div>
 
 {/* SOLO PARA TEST */}
-<button
-  onClick={() =>
-    updateSettings({
-      plan_type: settings.plan_type === "premium" ? "free" : "premium",
-    })
-  }
-  className="w-full mt-3 text-xs text-primary"
->
-  Cambiar a {settings.plan_type === "premium" ? "Free" : "Premium"}
-</button>
+
 
     </div>
   );
