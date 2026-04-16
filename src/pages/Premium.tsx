@@ -1,6 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Check, Crown, ArrowLeft } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { useEffect, useState } from "react";
+import { initBilling, buyPremium } from "@/lib/billing";
 
 const premiumFeatures = [
   "Alcanza tus metas más rápido con un plan claro",
@@ -16,10 +18,26 @@ export default function PremiumPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const fromFeature = location.state?.from;
+  const [billingError, setBillingError] = useState("");
+  const [isBuying, setIsBuying] = useState(false);
 
   const { settings, updateSettings } = useApp();
 
   const isPremium = settings?.plan_type === "premium";
+
+useEffect(() => {
+  initBilling({
+    onPremiumActivated: async () => {
+      await updateSettings({ plan_type: "premium" });
+      setIsBuying(false);
+      setBillingError("");
+    },
+    onError: (message) => {
+      setBillingError(message);
+      setIsBuying(false);
+    },
+  });
+}, []);
 
   return (
     <div className="min-h-screen bg-background px-4 py-6 pb-24">
@@ -80,22 +98,37 @@ export default function PremiumPage() {
             ))}
           </div>
 
-          <div className="mt-6 space-y-3">
-            {isPremium ? (
-              <button
-                onClick={() => updateSettings({ plan_type: "free" })}
-                className="w-full h-11 rounded-xl bg-secondary text-secondary-foreground text-sm font-medium"
-              >
-                Ya tienes Premium activo
-              </button>
-            ) : (
-              <button
-                onClick={() => updateSettings({ plan_type: "premium" })}
-                className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
-              >
-                Probar Premium ahora
-              </button>
-            )}
+<div className="mt-6 space-y-3">
+            
+{isPremium ? (
+  <button
+    className="w-full h-11 rounded-xl bg-secondary text-secondary-foreground text-sm font-medium"
+    disabled
+  >
+    Ya tienes Premium activo
+  </button>
+) : (
+  <button
+    onClick={async () => {
+      try {
+        setBillingError("");
+        setIsBuying(true);
+        await buyPremium();
+      } catch (error: any) {
+        setBillingError(error?.message || "No se pudo iniciar la compra.");
+        setIsBuying(false);
+      }
+    }}
+    className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-medium"
+  >
+    {isBuying ? "Abriendo Google Play..." : "Suscribirme a Premium"}
+  </button>
+)}
+
+{billingError && (
+    <p className="text-xs text-red-500 text-center">{billingError}</p>
+  )}
+
 
             <button
               onClick={() => navigate(-1)}
