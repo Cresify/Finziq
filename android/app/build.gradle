@@ -4,7 +4,7 @@ android {
     namespace = "com.willy.finziq"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.willy.finziq"
+        applicationId "com.willlabs.finziq"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

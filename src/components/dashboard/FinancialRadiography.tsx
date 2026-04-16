@@ -90,6 +90,28 @@ function getDiagnosis(score: number, savings: number) {
   return "Tu situación financiera está débil. Prioriza control de gastos y reducción de deudas.";
 }
 
+function hasEnoughFinancialData({
+  income,
+  expenses,
+  debt,
+  activeGoals,
+  transactionCount,
+}: {
+  income: number;
+  expenses: number;
+  debt: number;
+  activeGoals: number;
+  transactionCount: number;
+}) {
+  return (
+    transactionCount > 0 ||
+    income > 0 ||
+    expenses > 0 ||
+    debt > 0 ||
+    activeGoals > 0
+  );
+}
+
 function getRecommendations({
   income,
   expenses,
@@ -175,28 +197,45 @@ export function FinancialRadiography({ month, baseCurrency, rates }: Props) {
 
     const activeGoals = goals.filter((g) => !g.is_completed).length;
 
-    const score = calculateScore({
+    const hasData = hasEnoughFinancialData({
+  income,
+  expenses,
+  debt: totalDebt,
+  activeGoals,
+  transactionCount: monthTx.length,
+});
+
+const score = hasData
+  ? calculateScore({
       income,
       expenses,
       savings,
       debt: totalDebt,
-    });
+    })
+  : null;
 
-    return {
+return {
   income,
   expenses,
   savings,
   totalDebt,
   activeGoals,
+  hasData,
   score,
-  diagnosis: getDiagnosis(score, savings),
-  recommendations: getRecommendations({
-    income,
-    expenses,
-    savings,
-    debt: totalDebt,
-    activeGoals,
-  }),
+  diagnosis: hasData
+    ? getDiagnosis(score ?? 0, savings)
+    : "Aún no hay datos suficientes para evaluar tu radiografía financiera.",
+  recommendations: hasData
+    ? getRecommendations({
+        income,
+        expenses,
+        savings,
+        debt: totalDebt,
+        activeGoals,
+      })
+    : [
+        "Registra ingresos, gastos, metas o deudas para comenzar a generar tu radiografía financiera.",
+      ],
 };
 
   }, [transactions, debts, goals, month, rates]);
@@ -214,14 +253,16 @@ export function FinancialRadiography({ month, baseCurrency, rates }: Props) {
 
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Score</p>
-            <p className="text-xl font-bold text-primary">{data.score}/100</p>
+            <p className="text-xl font-bold text-primary">
+              {data.score !== null ? `${data.score}/100` : "--"}
+            </p>
           </div>
         </div>
 
         <div className="mt-4 h-2 rounded-full bg-secondary overflow-hidden">
           <div
             className="h-full bg-primary transition-all"
-            style={{ width: `${data.score}%` }}
+            style={{ width: `${data.score ?? 0}%` }}
           />
         </div>
 

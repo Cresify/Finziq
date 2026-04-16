@@ -108,12 +108,25 @@ export interface Debt {
   created_at: number;
 }
 
+export interface IncomeDistributionItem {
+  id: string;
+  name: string;
+  percent: number;
+}
+
+export interface IncomeDistribution {
+  id: string;
+  monthly_income: number;
+  items: IncomeDistributionItem[];
+  updated_at: number;
+}
+
 // ─── Database ────────────────────────────────────
 let dbInstance: IDBPDatabase | null = null;
 
 export async function getDB() {
   if (dbInstance) return dbInstance;
-  dbInstance = await openDB('GastosApp', 5, {
+  dbInstance = await openDB('GastosApp', 6, {
   upgrade(db, oldVersion) {
     // v1
     if (oldVersion < 1) {
@@ -148,6 +161,12 @@ if (oldVersion < 4) {
 if (oldVersion < 5) {
   if (!db.objectStoreNames.contains('debts')) {
     db.createObjectStore('debts', { keyPath: 'id' });
+  }
+}
+
+if (oldVersion < 6) {
+  if (!db.objectStoreNames.contains('income_distributions')) {
+    db.createObjectStore('income_distributions', { keyPath: 'id' });
   }
 }
 
@@ -241,6 +260,7 @@ export const BACKUP_STORES = [
   'currency_rates',
   'settings',
   'savings_accounts',
+  'income_distributions',
 ] as const;
 
 export type BackupStoreName = typeof BACKUP_STORES[number];
